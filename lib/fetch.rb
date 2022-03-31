@@ -1,21 +1,22 @@
 require "logger"
 require "uri"
 require "config"
+require "cache"
 
 require "trello"
 require "you_track"
 
 class Fetch
   def run
-    cache("youtrack_projects.json") { youtrack.projects }
-    cache("youtrack_users.json") { youtrack.users }
-    cache("youtrack_tags.json") { youtrack.tags }
-    cache("trello_organization_boards.json") { trello_organization_boards }
+    fetch("youtrack_projects") { youtrack.projects }
+    fetch("youtrack_users") { youtrack.users }
+    fetch("youtrack_tags") { youtrack.tags }
+    fetch("trello_organization_boards") { trello_organization_boards }
 
-    read_cache("trello_organization_boards.json").each do |board|
+    fetch("trello_organization_boards").each do |board|
       board_id = board["id"]
-      cache("trello_board_labels/#{board_id}.json") { trello.board_labels(board_id: board_id) }
-      cache("trello_board_members/#{board_id}.json") { trello.board_members(board_id: board_id) }
+      fetch("trello_board_labels/#{board_id}") { trello.board_labels(board_id: board_id) }
+      fetch("trello_board_members/#{board_id}") { trello.board_members(board_id: board_id) }
     end
 
     puts JSON.pretty_generate(trello.member(member_id: "58fee3bdaddf79720c126f22"))
@@ -32,22 +33,6 @@ class Fetch
   end
 
   private
-
-  def read_cache(file_name)
-    JSON.parse(File.read(cache_path(file_name)))
-  end
-
-  def cache(file_name)
-    full_path = cache_path(file_name)
-    return if File.exist?(full_path)
-    logger.info("updating #{full_path}")
-    FileUtils.mkdir_p(File.dirname(full_path))
-    yield.tap { File.write(full_path, JSON.pretty_generate(_1)) }
-  end
-
-  def cache_path(file_name)
-    File.join(Dir.pwd, "out", file_name)
-  end
 
   def trello_organization_boards
     trello.organization_boards(organization_id: trello_organization_id)
@@ -73,6 +58,14 @@ class Fetch
       token: Config.trello_api_token,
       logger: logger
     )
+  end
+
+  def fetch(key, &block)
+    cache.fetch(key, &block)
+  end
+
+  def cache
+    @cache ||= Cache.new(path: File.join(Dir.pwd, "cache"), logger: logger)
   end
 
   def logger
