@@ -18,9 +18,13 @@ module YouTrack
     ].freeze
 
     # SEE: https://www.jetbrains.com/help/youtrack/devportal/resource-api-issueTags.html#IssueTag-supported-fields
-    TAG_FIELDS = %w[
-      id
+    ISSUE_TAG_FIELDS = %w[
       name
+      id
+      color
+      untagOnResolve
+      owner
+      updateableBy
     ].freeze
 
     Error = Class.new(BasicError)
@@ -39,6 +43,12 @@ module YouTrack
       JSON.parse(response.body)
     end
 
+    def post(path, params = {})
+      response = connection.post(path, params, {"Content-Type" => "application/json"})
+      ensure_successful_response(response)
+      JSON.parse(response.body)
+    end
+
     def projects(fields: PROJECT_FIELDS)
       omit_type_field(get("/api/admin/projects", fields: csv(fields)))
     end
@@ -49,8 +59,13 @@ module YouTrack
       omit_type_field(get("/api/users", fields: csv(fields)))
     end
 
-    def tags(fields: TAG_FIELDS)
+    def issue_tags(fields: ISSUE_TAG_FIELDS)
       omit_type_field(get("/api/issueTags", fields: csv(fields)))
+    end
+
+    # SEE: https://www.jetbrains.com/help/youtrack/devportal/resource-api-issueTags.html#create-IssueTag-method
+    def create_issue_tag
+      post("/api/issueTags", fields: "id,name")
     end
 
     private

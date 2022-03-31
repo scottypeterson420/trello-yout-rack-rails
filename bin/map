@@ -8,6 +8,6 @@ Bundler.require
 lib_path = File.expand_path(File.join("..", "lib"), __dir__)
 $LOAD_PATH << lib_path if File.exist?(lib_path)
 
-require "fetcher"
+require "mapper"
 
-Fetcher.new.run
+Mapper.new.run
