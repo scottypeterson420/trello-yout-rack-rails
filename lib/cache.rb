@@ -8,8 +8,11 @@ class Cache
 
   def fetch(key)
     file_name = cache_path(key)
-    return JSON.parse(File.read(file_name)) if File.exist?(file_name)
-    log("updating #{key}")
+    if File.exist?(file_name)
+      log("reusing #{key}")
+      return JSON.parse(File.read(file_name))
+    end
+    log("fetching #{key}")
     FileUtils.mkdir_p(File.dirname(file_name))
     yield.tap { File.write(file_name, JSON.pretty_generate(_1)) }
   end

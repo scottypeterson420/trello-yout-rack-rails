@@ -16,10 +16,21 @@ class Fetch
     fetch("trello_organization_boards").each do |board|
       board_id = board["id"]
       fetch("trello_board_labels/#{board_id}") { trello.board_labels(board_id: board_id) }
-      fetch("trello_board_members/#{board_id}") { trello.board_members(board_id: board_id) }
     end
 
-    puts JSON.pretty_generate(trello.member(member_id: "58fee3bdaddf79720c126f22"))
+    fetch("trello_members") do
+      trello_members = {}
+
+      fetch("trello_organization_boards").each do |board|
+        board_id = board["id"]
+        board_members = fetch("trello_board_members/#{board_id}") { trello.board_members(board_id: board_id) }
+        board_members.each { trello_members[_1["id"]] = _1 }
+      end
+
+      trello_members
+    end
+
+    # puts JSON.pretty_generate(trello.member(member_id: "58fee3bdaddf79720c126f22"))
 
     # TODO: Trello users
     # TODO: Generate mapping configuration file JSON
