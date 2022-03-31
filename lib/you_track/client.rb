@@ -77,7 +77,7 @@ module YouTrack
         faraday.request(:authorization, "Bearer", token)
 
         # SEE: https://lostisland.github.io/faraday/middleware/logger
-        faraday.response(:logger, logger) do |faraday_logger|
+        faraday.response(:logger, logger, {headers: false, bodies: true}) do |faraday_logger|
           faraday_logger.filter(/(token=)(\w+)/, '\1[REMOVED]')
         end
 
